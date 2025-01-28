@@ -27,7 +27,7 @@ const Home = () => {
 
   return (
     <>
-        <nav className="w-screen bg-blue-600 py-8 px-8 shadow-lg">
+        <nav className="w-screen bg-blue-600 py-8 px-8 shadow-lg rounded-b-lg">
             <div className="flex items-center h-full">
                 <div>
                     <p className="font-bold text-xl text-white">Simple file converter</p>
