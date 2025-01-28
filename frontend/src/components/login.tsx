@@ -1,7 +1,9 @@
 import {useState, useRef, ChangeEvent} from "react";
 import {requestService} from "../services/requestService.ts";
+import {useNavigate} from "react-router-dom";
 
 const Login = () => {
+    const navigate = useNavigate()
     const usernameRef = useRef<HTMLInputElement>(null)
     const passwordRef = useRef<HTMLInputElement>(null)
 
@@ -17,9 +19,11 @@ const Login = () => {
             const response = await requestService.post("http://localhost:5050/login", {"username": username, "password": password})
             if(!response.ok){
                 setErrorMessage("Failed to login")
+                return
             }
             const body = await response.json()
-            const token = body.token
+            localStorage.setItem("token", body.token)
+            navigate("/")
         }
         catch{
             setErrorMessage("Failed to login")

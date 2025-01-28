@@ -1,15 +1,28 @@
 import {ChangeEvent} from 'react';
+import {requestService} from "../services/requestService.ts";
 
 const Home = () => {
-    const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
         if(!e.target.files){
             alert("You must select a file")
             return
         }
         const file = e.target.files[0]
-
         console.log(file)
-        // send the request to the api gateway to handle the file
+
+        try{
+            const formData = new FormData()
+            formData.append("file", file)
+            const response = await requestService.postFile("http://localhost:5050/encode", formData)
+
+            if(!response.ok){
+                console.log("everything ok")
+                return
+            }
+        }
+        catch{
+            console.log("bad")
+        }
     }
 
   return (
