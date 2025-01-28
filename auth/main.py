@@ -7,13 +7,14 @@ from flask_mysqldb import MySQL
 server = Flask(__name__)
 mysql = MySQL(server)
 
-jwt_secret = "abcdef"
-
 # config
 server.config['MYSQL_DATABASE_USER'] = os.environ.get('MYSQL_DATABASE_USER')
 server.config['MYSQL_DATABASE_HOST'] = os.environ.get('MYSQL_DATABASE_HOST')
 server.config['MYSQL_DATABASE_PORT'] = os.environ.get('MYSQL_DATABASE_PORT')
 server.config['MYSQL_DB'] = os.environ.get('MYSQL_DATABASE_DB')
+
+ALGORITHM = os.environ.get('ALGORITHM')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 @server.route("/validate", methods=["POST"])
@@ -26,7 +27,7 @@ def validate():
     token = encoded_jwt.split(" ")[1]
 
     try:
-        decoded = jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except:
         return "Failed to decode token", 401
 
@@ -55,8 +56,8 @@ def generate_jwt(username: str, is_admin: bool) -> str:
             "iat": datetime.now(UTC),
             "is_admin": is_admin,
         },
-        jwt_secret,
-        algorithm="HS256"
+        SECRET_KEY,
+        algorithm=ALGORITHM
     )
 
 def check_if_user_exists(username: str, password: str) -> bool:
