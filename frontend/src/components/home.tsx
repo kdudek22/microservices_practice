@@ -1,14 +1,22 @@
-import {ChangeEvent} from 'react';
+import {ChangeEvent, useEffect, useState} from 'react';
 import {requestService} from "../services/requestService.ts";
 
+enum State {
+    BeforeStartOfConversion,
+    AfterStartOfConversion,
+    ConversionFinished
+}
+
 const Home = () => {
-    const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-        if(!e.target.files){
-            alert("You must select a file")
-            return
-        }
-        const file = e.target.files[0]
-        console.log(file)
+    const [state, setState] = useState<State>(State.AfterStartOfConversion)
+    const [selectedFile, setSelectedFile] = useState<File|null>(null)
+    const [errorMessage, setErrorMessage] = useState("")
+    const [canConvert, setCanConvert] = useState<boolean>(false)
+    const [fileId, setFileId] = useState<string>("")
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        const file = selectedFile!
 
         try{
             const formData = new FormData()
@@ -16,13 +24,45 @@ const Home = () => {
             const response = await requestService.postFile("http://localhost:5050/encode", formData)
 
             if(!response.ok){
-                console.log("everything ok")
+                const error = await response.json()
+                alert(error.error)
                 return
             }
+            const data = await response.json()
+            console.log(data)
+            setState(State.AfterStartOfConversion)
         }
-        catch{
-            console.log("bad")
+        catch (e: any){
+            console.log(e.message)
         }
+    }
+
+    useEffect(() => {
+        if(state === State.AfterStartOfConversion){
+            setInterval(async () => {
+                const response = await requestService.get("http://localhost:5050/image?image_id=" + "679a2a7b9a1d1a50aa6920f7")
+                if(response.ok){
+                    console.log(response)
+                    setState(State.ConversionFinished)
+                }
+            }, 10000)
+        }
+
+    }, [state]);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setCanConvert(false)
+        if(!e.target.files){
+            setErrorMessage("Please select a file")
+            return
+        }
+        if(!e.target.files[0].name.endsWith(".jpg")){
+            setErrorMessage("Please select a jpg file!")
+            return
+        }
+        setCanConvert(true)
+        setErrorMessage("")
+        setSelectedFile(e.target.files[0])
     }
 
   return (
@@ -36,9 +76,31 @@ const Home = () => {
         </nav>
         <div className="py-16">
             <div className="flex flex-col items-center gap-16">
-                <p>Easily convert your files :)</p>
-                <label htmlFor="file-input" className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600">Select the file</label>
-                <input id="file-input" type="file" className="hidden" onChange={handleFileSelect}/>
+                { state === State.BeforeStartOfConversion &&
+                    <>
+                        <p>Easily convert your files :)</p>
+                        <form className="flex flex-col gap-8 items-center" onSubmit={handleSubmit}>
+                            <label htmlFor="file-input"
+                                   className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600">Select
+                                the file</label>
+                            <input id="file-input" type="file" className="hidden" onChange={handleFileChange}/>
+                            {selectedFile && <p className="text-gray-600">{selectedFile.name}</p>}
+                            {errorMessage && <p className="text-red-600 underline">{errorMessage}</p>}
+                            <button disabled={!canConvert} type="submit"
+                                    className="disabled:bg-gray-400 cursor-pointer bg-orange-500 text-white rounded-lg px-4 py-2">Convert
+                            </button>
+                        </form>
+                    </>}
+
+                { state === State.AfterStartOfConversion &&
+                    <>
+                        <p>The conversion is ongoing, please </p>
+                    </>}
+
+                { state === State.ConversionFinished &&
+                    <>
+                        <a href="http://localhost/image">Download the converted file</a>
+                    </>}
             </div>
         </div>
     </>
